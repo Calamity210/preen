@@ -1,0 +1,137 @@
+import 'sgl:io'
+
+import 'utils/color.sgl'
+
+function help() {
+  println(
+    'Usage:\n',
+    '\t-h: show help message\n',
+    '\t-q: quiet mode\n',
+    '\t-d: dull mode(no colors)'
+  );
+}
+
+var quiet = false;
+var dull = false;
+
+if (argv.length() > 0) {
+  for (var i = 0; i < argv.length(); i++) {
+    var arg = argv[i];
+
+    if (arg == '-h') {
+      help();
+      exit(0);
+    } else if (arg == '-q') {
+      quiet = true;
+    } else if (arg == '-d') {
+      dull = true;
+    } else {
+      help();
+      exit(1);
+    }
+  }
+}
+
+function color(color, msg) {
+  if (dull)
+    return msg;
+
+  return color + msg + Colors.Default;
+}
+
+var tabTag = color(Colors.Blue,               '[----------]');
+var doneTag = color(Colors.Blue,              '[==========]');
+var runTag = color(Colors.Blue,               '[    RUN   ]');
+var okTag = color(Colors.Green,               '[    OK    ]');
+var failTag = color(Colors.Red,               '[   FAIL   ]');
+var disabledTag = color(Colors.Yellow,        '[ DISABLED ]');
+var passedTag = color(Colors.BrightGreen,     '[  PASSED  ]');
+var failedTag = color(Colors.BrightRed,       '[  FAILED  ]');
+
+var testCount = 0;
+var failed = false;
+var failedTests = [];
+
+function log(msg) {
+  if(!quiet)
+    println(msg);
+}
+
+function fail(msg) {
+  failed = true;
+  println(color(Colors.Red, "Fail: " + msg));
+}
+
+function testAssert(cond) {
+  if (!cond)
+    fail('assertion ' + cond.toString() + ' failed');
+}
+
+function equal(left, right) {
+  if (left != right)
+    fail(left.toString() + ' != ' + right);
+}
+
+function notEqual(left, right) {
+  if (left == right)
+    fail(left.toString() + ' == ' + right);
+}
+
+function diff(left, right, diff) {
+  if ((left - right).abs() > diff)
+    fail('|' + left.toString() + ' - ' + right.toString() + '| > ' + diff.toString());
+}
+
+function isFalse(condition) {
+  if (condition)
+    fail(condition.toString() + ' is not false');
+}
+
+function isTrue(condition) {
+  if (!condition)
+    fail(condition.toString() + ' is not true');
+}
+
+function isNotNull(object) {
+  if (object == null)
+    fail(boolean.toString() + ' is null');
+}
+
+function test(name, func) {
+
+  testCount++;
+  failed = false;
+
+  log(runTag + ' ' + name);
+
+  var start = clock() / CLOCKS_PER_SEC;
+  func();
+  var end = clock() / CLOCKS_PER_SEC;
+
+  log((failed ? failTag : okTag) + ' ' + name + ' ' + (end - start).toString() + ' seconds');
+
+  if (failed)
+    failedTests.add(name);
+}
+
+function testsSummary() {
+  log(doneTag);
+  
+  var failedCount = failedTests.length();
+
+  if (!failedCount) {
+    var testString = (testCount > 1) ? ' tests' : ' test';
+    log(passedTag + ' ' + testCount.toString() + ' test');
+    exit(0);
+  }
+
+  log(failedTag + ' ' + failedCount.toString() + ' of ' + testCount.toString() + ':');
+
+  for (var i = 0; i < failedCount; i++) {
+    log(failedTag + '\t' + failedTests[i]);
+  }
+  exit(1);
+}
+
+function result() => [testCount, failedTests.length()];
+  

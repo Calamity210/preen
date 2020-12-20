@@ -1,0 +1,12 @@
+import '../src/preen.sgl'
+
+function areBirbsAwesome() {
+  return true;
+}
+
+function birbsAreAwesome() {
+  testAssert(areBirbsAwesome());
+}
+
+test('birbsAreAwesome', birbsAreAwesome);
+testsSummary();
